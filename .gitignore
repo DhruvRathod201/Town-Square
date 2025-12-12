@@ -49,3 +49,11 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# Local guides and optional files not for repo
+PROJECT_COMPLETE_GUIDE.md
+PROJECT_GUIDE_PART1.md
+PROJECT_GUIDE_PART2.md
+PROJECT_GUIDE_PART3.md
+README_COMPLETE_GUIDE.md
+requirements_ai_options.txt
+
