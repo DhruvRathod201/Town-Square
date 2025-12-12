@@ -1,0 +1,190 @@
+{% extends 'complaints/base.html' %}
+
+{% block title %}TownSquare - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center py-5 bg-light rounded">
+    <div class="container">
+        <h1 class="display-4 fw-bold text-primary mb-4">
+            <i class="fas fa-city me-3"></i>Welcome to TownSquare
+        </h1>
+        <p class="lead mb-4">
+            Your voice matters! Report civic issues, track their progress, and help make our community better.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            {% if not user.is_authenticated %}
+                <a href="{% url 'complaints:register' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-user-plus me-2"></i>Get Started
+                </a>
+                <a href="{% url 'complaints:login' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                </a>
+            {% else %}
+                <a href="{% url 'complaints:submit_complaint' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Submit Complaint
+                </a>
+                <a href="{% url 'complaints:dashboard' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-tachometer-alt me-2"></i>View Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="row mt-5 mb-5">
+    <div class="col-md-4 text-center">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-clipboard-list fa-3x text-primary mb-3"></i>
+                <h3 class="card-title">{{ total_complaints|default:"0" }}</h3>
+                <p class="card-text text-muted">Total Issues Reported</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-center">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                <h3 class="card-title">{{ pending_complaints|default:"0" }}</h3>
+                <p class="card-text text-muted">Pending Review</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-center">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h3 class="card-title">{{ resolved_complaints|default:"0" }}</h3>
+                <p class="card-text text-muted">Issues Resolved</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mt-5">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-robot fa-3x text-info mb-3"></i>
+                <h4 class="card-title">AI-Powered Classification</h4>
+                <p class="card-text">
+                    Our intelligent system automatically categorizes your complaints using advanced AI technology,
+                    ensuring they reach the right department quickly.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-mobile-alt fa-3x text-success mb-3"></i>
+                <h4 class="card-title">Easy to Use</h4>
+                <p class="card-text">
+                    Simple and intuitive interface that works on all devices. Submit complaints with photos
+                    and track progress in real-time.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                <h4 class="card-title">Real-Time Tracking</h4>
+                <p class="card-text">
+                    Get updates on your complaint status, from submission to resolution. 
+                    Stay informed every step of the way.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-shield-alt fa-3x text-danger mb-3"></i>
+                <h4 class="card-title">Secure & Private</h4>
+                <p class="card-text">
+                    Your personal information is protected. We use industry-standard security
+                    to keep your data safe and confidential.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="mt-5">
+    <h2 class="text-center mb-4">How It Works</h2>
+    <div class="row">
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-circle bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                <span class="h4 mb-0">1</span>
+            </div>
+            <h5>Report Issue</h5>
+            <p class="text-muted">Describe the problem and upload photos if needed</p>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-circle bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                <span class="h4 mb-0">2</span>
+            </div>
+            <h5>AI Classification</h5>
+            <p class="text-muted">Our AI automatically categorizes your complaint</p>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-circle bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                <span class="h4 mb-0">3</span>
+            </div>
+            <h5>Review Process</h5>
+            <p class="text-muted">Officials review and assign to appropriate department</p>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="step-circle bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                <span class="h4 mb-0">4</span>
+            </div>
+            <h5>Resolution</h5>
+            <p class="text-muted">Track progress and get notified when resolved</p>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="text-center mt-5 py-5 bg-primary text-white rounded">
+    <h3 class="mb-3">Ready to Make a Difference?</h3>
+    <p class="lead mb-4">Join thousands of citizens who are actively improving their community.</p>
+    {% if not user.is_authenticated %}
+        <a href="{% url 'complaints:register' %}" class="btn btn-light btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Join TownSquare Today
+        </a>
+    {% else %}
+        <a href="{% url 'complaints:submit_complaint' %}" class="btn btn-light btn-lg">
+            <i class="fas fa-plus me-2"></i>Submit Your First Complaint
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .step-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+

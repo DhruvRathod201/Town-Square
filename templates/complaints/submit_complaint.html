@@ -1,0 +1,265 @@
+{% extends 'complaints/base.html' %}
+{% load static %}
+
+{% block title %}Submit Complaint - TownSquare{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Manual Complaint Submission
+                    </h4>
+                    <small>Fill in the details and let our AI help analyze your complaint</small>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="complaintForm">
+                        {% csrf_token %}
+                        
+                        <!-- Title and Category Row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Title *</label>
+                                    <input type="text" class="form-control" id="title" name="title" required 
+                                           placeholder="Brief description of the issue">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category *</label>
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="">Select category...</option>
+                                        <option value="road">Road & Infrastructure</option>
+                                        <option value="water">Water & Sewage</option>
+                                        <option value="streetlight">Street Lighting</option>
+                                        <option value="traffic">Traffic & Transportation</option>
+                                        <option value="garbage">Garbage & Waste</option>
+                                        <option value="noise">Noise Pollution</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Detailed Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required 
+                                      placeholder="Describe the issue in detail..."></textarea>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <strong>Tips:</strong> Include what exactly is the problem, how long it's been there, 
+                                    what impact it has on the community, and any additional context.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Location with GPS -->
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location *</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="location" name="location" required 
+                                       placeholder="Street address, landmark, or intersection">
+                                <button class="btn btn-outline-primary" type="button" onclick="getCurrentLocation()">
+                                    <i class="fas fa-location-arrow me-2"></i>Get My Location
+                                </button>
+                            </div>
+                            <small class="text-muted">Provide exact location for faster response</small>
+                        </div>
+                        
+                        <!-- Photo Evidence -->
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Photo Evidence (Optional)</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                            <div class="form-text">
+                                <small class="text-muted">Supported: JPG, PNG, GIF (max 5MB)</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden fields for AI analysis results -->
+                        <input type="hidden" id="severity" name="severity" value="medium">
+                        <input type="hidden" id="priority" name="priority" value="medium">
+                        
+                        <!-- AI Analysis Preview -->
+                        <div class="mb-3">
+                            <label class="form-label">AI Analysis Preview</label>
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-robot me-2"></i>
+                                    <strong>AI Analysis</strong>
+                                                                            <div class="ms-auto">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="analyzeComplaint()">
+                                                <i class="fas fa-magic me-2"></i>Analyze Now
+                                            </button>
+                                        </div>
+                                </div>
+                                <div id="aiAnalysisResults">
+                                    <small class="text-muted">Click "Analyze Now" to get AI insights, or submit directly - AI will analyze everything when you submit</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'complaints:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Complaint
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h6>Analyzing Complaint with AI...</h6>
+                <p class="text-muted">This may take a few seconds</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Send coordinates to server for reverse geocoding
+                fetch(`{% url "complaints:get_user_location" %}?lat=${lat}&lng=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('location').value = data.location;
+                    } else {
+                        document.getElementById('location').value = `Lat: ${lat}, Lng: ${lng}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('location').value = `Lat: ${lat}, Lng: ${lng}`;
+                });
+            },
+            function(error) {
+                alert('Unable to get your location. Please enter it manually.');
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by this browser.');
+    }
+}
+
+function analyzeComplaint() {
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const imageFile = document.getElementById('image').files[0];
+    
+    if (!title && !description) {
+        alert('Please enter a title or description before analyzing.');
+        return;
+    }
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
+    formData.append('analyze_text', '1');
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('{% url "complaints:submit_complaint" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        
+        if (data.success) {
+            // Update AI analysis results
+            document.getElementById('aiAnalysisResults').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Category:</strong> ${data.category}<br>
+                        <strong>Severity:</strong> ${data.severity}<br>
+                        <strong>Priority:</strong> ${data.priority}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Department:</strong> ${data.department}<br>
+                        <strong>Resolution Time:</strong> ${data.resolution_time}<br>
+                        <strong>Confidence:</strong> ${data.confidence}
+                    </div>
+                </div>
+                <hr>
+                <strong>AI Insights:</strong> ${data.insights}
+            `;
+            
+            // Auto-select the suggested category
+            document.getElementById('category').value = data.category_code;
+            
+            // Update hidden severity and priority fields
+            document.getElementById('severity').value = data.severity;
+            document.getElementById('priority').value = data.priority;
+            
+        } else {
+            document.getElementById('aiAnalysisResults').innerHTML = 
+                `<div class="text-danger">AI analysis failed: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        document.getElementById('aiAnalysisResults').innerHTML = 
+            `<div class="text-danger">Error: ${error.message}</div>`;
+    });
+}
+
+// No auto-analysis - only manual trigger via "Analyze Now" button
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .card {
+        border-radius: 15px;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .alert {
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+
+

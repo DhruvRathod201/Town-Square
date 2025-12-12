@@ -1,0 +1,152 @@
+{% load static %}
+
+<div class="timeline">
+    {% if updates %}
+        {% for update in updates %}
+            <div class="timeline-item">
+                <div class="timeline-marker timeline-marker-{{ update.status }}"></div>
+                <div class="timeline-content timeline-content-{{ update.status }}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">{{ update.get_status_display }}</h6>
+                        <small class="text-muted">{{ update.created_at|date:"M j, Y, g:i a" }}</small>
+                    </div>
+                    {% if update.notes %}
+                        <p class="mb-1">{{ update.notes }}</p>
+                    {% endif %}
+                    <small class="text-muted">Updated by: {{ update.updated_by.get_full_name|default:update.updated_by.username }}</small>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Initial Complaint Creation -->
+    <div class="timeline-item">
+        <div class="timeline-marker timeline-marker-submitted"></div>
+        <div class="timeline-content timeline-content-submitted">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Complaint Submitted</h6>
+                <small class="text-muted">{{ complaint.created_at|date:"M j, Y, g:i a" }}</small>
+            </div>
+            <p class="mb-1">{% if user.is_staff %}Initial complaint submitted by citizen{% else %}Your complaint has been submitted and is under review{% endif %}</p>
+            <small class="text-muted">{% if user.is_staff %}Submitted by: {{ complaint.citizen.user.get_full_name|default:complaint.citizen.user.username }}{% else %}Submitted by: {{ complaint.citizen.user.get_full_name|default:complaint.citizen.user.username }}{% endif %}</small>
+        </div>
+    </div>
+    
+    {% if not updates %}
+        <p class="text-muted text-center mt-3">No status updates yet.</p>
+    {% endif %}
+</div>
+
+<style>
+/* Enhanced timeline styling */
+.timeline {
+    position: relative;
+    padding-left: 15px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+
+
+
+
+.timeline-marker {
+    position: absolute;
+    left: -20px;
+    top: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    z-index: 3;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+    position: relative;
+    z-index: 2;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Status-based timeline colors */
+.timeline-marker-pending {
+    background-color: #ffc107 !important;
+}
+
+.timeline-marker-in_progress {
+    background-color: #17a2b8 !important;
+}
+
+.timeline-marker-resolved {
+    background-color: #28a745 !important;
+}
+
+.timeline-marker-rejected {
+    background-color: #dc3545 !important;
+}
+
+.timeline-marker-submitted {
+    background-color: #6f42c1 !important;
+}
+
+/* Timeline content border colors */
+.timeline-content-pending {
+    border-left-color: #ffc107 !important;
+}
+
+.timeline-content-in_progress {
+    border-left-color: #17a2b8 !important;
+}
+
+.timeline-content-resolved {
+    border-left-color: #28a745 !important;
+}
+
+.timeline-content-rejected {
+    border-left-color: #dc3545 !important;
+}
+
+.timeline-content-submitted {
+    border-left-color: #6f42c1 !important;
+}
+
+/* Better styling for status updates */
+.timeline-content h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+.timeline-content p {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-content small {
+    color: #868e96;
+}
+</style>

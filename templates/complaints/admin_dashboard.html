@@ -1,0 +1,494 @@
+{% extends 'complaints/base.html' %}
+
+{% block title %}Admin Dashboard - TownSquare{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 bg-dark text-white">
+            <div class="card-body">
+                <h2 class="mb-2">
+                    <i class="fas fa-tools me-2"></i>Admin Dashboard
+                </h2>
+                <p class="mb-0">Manage and track all civic complaints across the community</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-clipboard-list fa-2x text-primary mb-2"></i>
+                <h3 class="card-title text-primary">{{ total_complaints }}</h3>
+                <p class="card-text text-muted">Total Complaints</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h3 class="card-title text-warning">{{ pending_count }}</h3>
+                <p class="card-text text-muted">Pending Review</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-cogs fa-2x text-info mb-2"></i>
+                <h3 class="card-title text-info">{{ in_progress_count }}</h3>
+                <p class="card-text text-muted">In Progress</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-0 shadow-sm h-100">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h3 class="card-title text-success">{{ resolved_count }}</h3>
+                <p class="card-text text-muted">Resolved</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Distribution Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Complaints by Category
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for stat in category_stats %}
+                    <div class="col-md-2 col-6 mb-3 text-center">
+                        <div class="category-stat">
+                            <div class="category-icon mb-2">
+                                {% if stat.category == 'garbage' %}
+                                    <i class="fas fa-trash fa-2x text-success"></i>
+                                {% elif stat.category == 'road' %}
+                                    <i class="fas fa-road fa-2x text-warning"></i>
+                                {% elif stat.category == 'streetlight' %}
+                                    <i class="fas fa-lightbulb fa-2x text-info"></i>
+                                {% elif stat.category == 'water' %}
+                                    <i class="fas fa-tint fa-2x text-primary"></i>
+                                {% elif stat.category == 'noise' %}
+                                    <i class="fas fa-volume-up fa-2x text-danger"></i>
+                                {% elif stat.category == 'traffic' %}
+                                    <i class="fas fa-car fa-2x text-secondary"></i>
+                                {% else %}
+                                    <i class="fas fa-question-circle fa-2x text-muted"></i>
+                                {% endif %}
+                            </div>
+                            <h6 class="mb-1">{{ stat.count }}</h6>
+                            <small class="text-muted">{{ stat.category|title }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complaints Table with Integrated Filters -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>All Complaints
+                    </h5>
+                    <span class="badge bg-primary">{{ page_obj.paginator.count }} total</span>
+                </div>
+                
+                <!-- Integrated Filters -->
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_query }}" placeholder="Search complaints...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All Categories</option>
+                            <option value="garbage" {% if category_filter == 'garbage' %}selected{% endif %}>Garbage & Waste</option>
+                            <option value="road" {% if category_filter == 'road' %}selected{% endif %}>Road & Infrastructure</option>
+                            <option value="streetlight" {% if category_filter == 'streetlight' %}selected{% endif %}>Street Lighting</option>
+                            <option value="water" {% if category_filter == 'water' %}selected{% endif %}>Water & Sewage</option>
+                            <option value="noise" {% if category_filter == 'noise' %}selected{% endif %}>Noise Pollution</option>
+                            <option value="traffic" {% if category_filter == 'traffic' %}selected{% endif %}>Traffic & Transportation</option>
+                            <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+                
+                {% if search_query or status_filter or category_filter %}
+                <div class="mt-3">
+                    <a href="{% url 'complaints:admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Clear Filters
+                    </a>
+                    <small class="text-muted ms-2">
+                        Showing filtered results
+                        {% if search_query %}for "{{ search_query }}"{% endif %}
+                        {% if status_filter %}with status "{{ status_filter }}"{% endif %}
+                        {% if category_filter %}in category "{{ category_filter }}"{% endif %}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if page_obj %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-dark fw-bold">ID</th>
+                                    <th class="text-dark fw-bold">Title</th>
+                                    <th class="text-dark fw-bold">Citizen</th>
+                                    <th class="text-dark fw-bold">Category</th>
+                                    <th class="text-dark fw-bold">Location</th>
+                                    <th class="text-dark fw-bold">Status</th>
+                                    <th class="text-dark fw-bold">Severity</th>
+                                    <th class="text-dark fw-bold">Priority</th>
+                                    <th class="text-dark fw-bold">Submitted</th>
+                                    <th class="text-dark fw-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for complaint in page_obj %}
+                                <tr>
+                                    <td><strong>#{{ complaint.id }}</strong></td>
+                                    <td>
+                                        <strong>{{ complaint.title|truncatechars:25 }}</strong>
+                                        {% if complaint.image %}
+                                            <i class="fas fa-image text-info ms-1" title="Has image"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ complaint.citizen.user.get_full_name|default:complaint.citizen.user.username }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ complaint.citizen.city|default:"Unknown" }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ complaint.get_category_display }}</span>
+                                        {% if complaint.predicted_category %}
+                                            <br><small class="text-muted">AI: {{ complaint.get_predicted_category_display }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ complaint.location|truncatechars:20 }}</td>
+                                    <td>
+                                        {% if complaint.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif complaint.status == 'in_progress' %}
+                                            <span class="badge bg-info">In Progress</span>
+                                        {% elif complaint.status == 'resolved' %}
+                                            <span class="badge bg-success">Resolved</span>
+                                        {% elif complaint.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if complaint.severity == 'high' %}
+                                            <span class="badge bg-danger">High</span>
+                                        {% elif complaint.severity == 'medium' %}
+                                            <span class="badge bg-warning">Medium</span>
+                                        {% elif complaint.severity == 'low' %}
+                                            <span class="badge bg-success">Low</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Not Set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if complaint.priority == 'high' %}
+                                            <span class="badge bg-danger">High</span>
+                                        {% elif complaint.priority == 'medium' %}
+                                            <span class="badge bg-warning">Medium</span>
+                                        {% elif complaint.priority == 'low' %}
+                                            <span class="badge bg-success">Low</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Not Set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ complaint.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'complaints:admin_complaint_detail' complaint.id %}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" 
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end position-absolute" style="z-index: 9999; min-width: 200px;">
+                                                <li><h6 class="dropdown-header">Quick Status Update</h6></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ complaint.id }}, 'pending')">
+                                                    <i class="fas fa-clock text-warning me-2"></i>Mark Pending
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ complaint.id }}, 'in_progress')">
+                                                    <i class="fas fa-cogs text-info me-2"></i>Mark In Progress
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ complaint.id }}, 'resolved')">
+                                                    <i class="fas fa-check-circle text-success me-2"></i>Mark Resolved
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus({{ complaint.id }}, 'rejected')">
+                                                    <i class="fas fa-times-circle text-danger me-2"></i>Mark Rejected
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item" href="{% url 'complaints:admin_complaint_detail' complaint.id %}">
+                                                    <i class="fas fa-edit me-2"></i>Edit Details
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                    <div class="card-footer">
+                        <nav aria-label="Admin complaints pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">&laquo; First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Last &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No complaints found</h5>
+                        <p class="text-muted">
+                            {% if search_query or status_filter or category_filter %}
+                                Try adjusting your filters or search terms.
+                            {% else %}
+                                No complaints have been submitted yet.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateStatus(complaintId, newStatus) {
+    const statusNames = {
+        'pending': 'Pending',
+        'in_progress': 'In Progress', 
+        'resolved': 'Resolved',
+        'rejected': 'Rejected'
+    };
+    
+    if (confirm(`Are you sure you want to update complaint #${complaintId} status to "${statusNames[newStatus]}"?`)) {
+        const notes = prompt('Add notes about this status change (optional):');
+        
+        // Show loading state
+        const button = event.target.closest('.btn-group');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
+        button.disabled = true;
+        
+        fetch(`/api/complaint/${complaintId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                status: newStatus,
+                notes: notes || ''
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Show success message before reload
+                const successAlert = document.createElement('div');
+                successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                successAlert.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>Status updated successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(successAlert);
+                
+                // Reload after a short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // Restore button state
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            
+            // Show error message
+            const errorAlert = document.createElement('div');
+            errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            errorAlert.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>Error updating status: ${error.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(errorAlert);
+        });
+    }
+}
+
+// Add CSRF token to all AJAX requests
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Add CSRF token to all fetch requests
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        if (options.method && options.method !== 'GET') {
+            options.headers = {
+                ...options.headers,
+                'X-CSRFToken': csrfToken
+            };
+        }
+        return originalFetch(url, options);
+    };
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-stat {
+        padding: 15px;
+        border-radius: 10px;
+        background: #f8f9fa;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .category-stat:hover {
+        transform: translateY(-2px);
+        background: #e9ecef;
+    }
+    
+    .card {
+        border-radius: 10px;
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+    }
+    
+    .badge {
+        font-size: 0.8em;
+    }
+    
+    .btn-group .dropdown-toggle::after {
+        margin-left: 0.5em;
+    }
+    
+    /* Fix dropdown positioning and visibility */
+    .dropdown-menu {
+        position: absolute !important;
+        z-index: 9999 !important;
+        min-width: 200px !important;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid rgba(0, 0, 0, 0.125) !important;
+    }
+    
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    .table {
+        overflow: visible !important;
+    }
+    
+    .card-body {
+        overflow: visible !important;
+    }
+    
+    /* Ensure dropdown items are properly spaced */
+    .dropdown-item {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .dropdown-header {
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        font-size: 0.75rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+</style>
+{% endblock %}
+
+

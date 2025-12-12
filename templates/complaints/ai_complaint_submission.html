@@ -1,0 +1,324 @@
+{% extends 'complaints/base.html' %}
+{% load static %}
+
+{% block title %}AI-Powered Complaint Submission - TownSquare{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        AI-Powered Complaint Submission
+                    </h4>
+                    <small>Upload an image and let our AI help you create a detailed complaint</small>
+                </div>
+                <div class="card-body">
+                    <!-- Step 1: Image Upload -->
+                    <div id="step1" class="step-section">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-camera me-2"></i>
+                            Step 1: Upload Image
+                        </h5>
+                        <div class="upload-area border-2 border-dashed border-primary rounded p-4 text-center" 
+                             id="uploadArea" style="border-style: dashed;">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h6>Drag & Drop your image here</h6>
+                            <p class="text-muted">or</p>
+                            <input type="file" id="imageInput" accept="image/*" class="d-none">
+                            <button class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-upload me-2"></i>Choose Image
+                            </button>
+                            <p class="text-muted mt-2">Supported: JPG, PNG, GIF (max 5MB)</p>
+                        </div>
+                        
+                        <div id="imagePreview" class="mt-3 d-none">
+                            <div class="text-center">
+                                <img id="previewImg" class="img-fluid rounded" style="max-height: 300px;">
+                                <div class="mt-2">
+                                    <button class="btn btn-success" onclick="analyzeImage()">
+                                        <i class="fas fa-magic me-2"></i>Analyze with AI
+                                    </button>
+                                    <button class="btn btn-outline-secondary ms-2" onclick="resetImage()">
+                                        <i class="fas fa-redo me-2"></i>Change Image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: AI Analysis Results -->
+                    <div id="step2" class="step-section d-none">
+                        <h5 class="text-success mb-3">
+                            <i class="fas fa-brain me-2"></i>
+                            Step 2: AI Analysis Results
+                        </h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Our AI has analyzed your image and generated the following details. You can edit any field before submitting.
+                        </div>
+                        
+                        <form id="complaintForm" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="submit_complaint" value="1">
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">Title *</label>
+                                        <input type="text" class="form-control" id="title" name="title" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="category" class="form-label">Category *</label>
+                                        <select class="form-select" id="category" name="category" required>
+                                            <option value="">Select category...</option>
+                                            <option value="road">Road & Infrastructure</option>
+                                            <option value="water">Water & Sewage</option>
+                                            <option value="streetlight">Street Lighting</option>
+                                            <option value="traffic">Traffic & Transportation</option>
+                                            <option value="garbage">Garbage & Waste</option>
+                                            <option value="noise">Noise Pollution</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Detailed Description *</label>
+                                <textarea class="form-control" id="description" name="description" rows="4" required 
+                                          placeholder="Describe the issue in detail..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Location *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="location" name="location" required>
+                                    <button class="btn btn-outline-primary" type="button" onclick="getCurrentLocation()">
+                                        <i class="fas fa-location-arrow me-2"></i>Get My Location
+                                    </button>
+                                </div>
+                                <small class="text-muted">Provide exact location (street address, landmark, or intersection)</small>
+                            </div>
+                            
+                            <!-- Hidden fields for AI analysis results -->
+                            <input type="hidden" id="severity" name="severity" value="medium">
+                            <input type="hidden" id="priority" name="priority" value="medium">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">AI Insights</label>
+                                <div class="alert alert-light border">
+                                    <div id="aiInsights">AI analysis will appear here...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" onclick="goToStep1()">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Image Upload
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-paper-plane me-2"></i>Submit Complaint
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h6>Analyzing Image with AI...</h6>
+                <p class="text-muted">This may take a few seconds</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedImage = null;
+
+// File upload handling
+document.getElementById('imageInput').addEventListener('change', handleImageSelect);
+document.getElementById('uploadArea').addEventListener('dragover', handleDragOver);
+document.getElementById('uploadArea').addEventListener('drop', handleDrop);
+
+function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        selectedImage = file;
+        showImagePreview(file);
+    }
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.style.borderColor = '#007bff';
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        selectedImage = file;
+        showImagePreview(file);
+    }
+    event.currentTarget.style.borderColor = '#dee2e6';
+}
+
+function showImagePreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('imagePreview').classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+}
+
+function resetImage() {
+    selectedImage = null;
+    document.getElementById('imageInput').value = '';
+    document.getElementById('imagePreview').classList.add('d-none');
+}
+
+function analyzeImage() {
+    if (!selectedImage) {
+        alert('Please select an image first');
+        return;
+    }
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    const formData = new FormData();
+    formData.append('image', selectedImage);
+    formData.append('analyze_image', '1');
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('{% url "complaints:ai_complaint_submission" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        
+        if (data.success) {
+            // Populate form with AI results
+            document.getElementById('title').value = data.ai_title;
+            document.getElementById('description').value = data.ai_description;
+            document.getElementById('category').value = data.ai_category;
+            
+            // Update hidden severity and priority fields
+            document.getElementById('severity').value = data.ai_severity;
+            document.getElementById('priority').value = data.ai_priority;
+            
+            document.getElementById('aiInsights').innerHTML = `
+                <strong>AI Analysis:</strong> ${data.ai_insights}<br>
+                <strong>Confidence:</strong> ${data.ai_confidence}<br>
+                <strong>Department:</strong> ${data.ai_department}<br>
+                <strong>Severity:</strong> ${data.ai_severity}<br>
+                <strong>Priority:</strong> ${data.ai_priority}
+            `;
+            
+            // Show step 2
+            goToStep2();
+        } else {
+            alert('AI analysis failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        alert('Error analyzing image: ' + error.message);
+    });
+}
+
+function goToStep2() {
+    document.getElementById('step1').classList.add('d-none');
+    document.getElementById('step2').classList.remove('d-none');
+}
+
+function goToStep1() {
+    document.getElementById('step2').classList.add('d-none');
+    document.getElementById('step1').classList.remove('d-none');
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Send coordinates to server for reverse geocoding
+                fetch(`{% url "complaints:get_user_location" %}?lat=${lat}&lng=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('location').value = data.location;
+                    } else {
+                        document.getElementById('location').value = `Lat: ${lat}, Lng: ${lng}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('location').value = `Lat: ${lat}, Lng: ${lng}`;
+                });
+            },
+            function(error) {
+                alert('Unable to get your location. Please enter it manually.');
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by this browser.');
+    }
+}
+
+// Form submission
+document.getElementById('complaintForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('image', selectedImage);
+    
+    fetch('{% url "complaints:ai_complaint_submission" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message and redirect
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                window.location.href = '{% url "complaints:dashboard" %}';
+            }
+        } else {
+            if (data.errors) {
+                alert('Error submitting complaint: ' + JSON.stringify(data.errors));
+            } else {
+                alert('Error submitting complaint: ' + (data.message || 'Unknown error'));
+            }
+        }
+    })
+    .catch(error => {
+        alert('Error submitting complaint: ' + error.message);
+    });
+});
+</script>
+{% endblock %}

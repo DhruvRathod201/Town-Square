@@ -1,0 +1,24 @@
+# AI Image Analysis Options for TownSquare
+# Choose ONE of these options based on your preference
+
+# Option 1: Google Gemini Pro (Recommended - Free tier available)
+google-generativeai>=0.3.0
+
+# Option 2: OpenAI ChatGPT Vision
+openai>=1.0.0
+
+# Option 3: Hugging Face (Current implementation)
+# transformers>=4.0.0
+# torch>=2.0.0
+# requests>=2.25.0
+
+# Common dependencies
+Pillow>=9.0.0
+requests>=2.25.0
+python-decouple>=3.8
+
+# Django dependencies
+Django>=5.0.0
+djangorestframework>=3.14.0
+
+
